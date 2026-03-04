@@ -39,12 +39,16 @@ public:
 	void EnemyAllKill();
 
 	void DrawUI(); // 플레이어 UI 띄워주는 함수
+
+	void AddDanger(Vector2 pos, int value);
+
+	int GetDangerValue(Vector2 pos); // Astar의 물풍선가중치를 위해 호출예정
 	Player* player = nullptr;
 private:
 	void LoadMap(const char* filename);
 
 private:
-	
+	int dangerMap[20][20] = { 0, };
 	int playerLifeCount = 3;
 	Vector2 playerStartPosition = { -1, -1 };
 };

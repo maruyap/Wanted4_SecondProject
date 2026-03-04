@@ -8,8 +8,15 @@ Monster::Monster(const Vector2& Position)
 	: super("M", Position, Color::Red)
 {
 	sortingOrder = 11;
+    //astar = new AStar();
 }
 
+Monster::~Monster()
+{
+    //if (astar) delete astar;
+}
+
+// 기존BFS추적과 에이스타추적의 시각화 비교목적을 위한 버전
 void Monster::Tick(float deltaTime)
 {
     moveTimer.Tick(deltaTime);
@@ -17,50 +24,86 @@ void Monster::Tick(float deltaTime)
     if (moveTimer.IsTimeOut())
     {
         GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
-        if (!gameLevel) return; // nullptr 체크를 가장 위로.
+        if (!gameLevel) return;
 
         Vector2 myPos = GetPosition();
         Vector2 playerPos = gameLevel->GetPlayerPosition();
-        int distance = myPos.DistanceTo(playerPos);
 
-        // 상태 결정 및 관리.
-        if (distance >= 7) 
+        // [수정 포인트 1] 거리와 상관없이 무조건 추적 상태로 설정
+        state = MonsterState::Chase;
+
+        // [수정 포인트 2] 항상 플레이어의 위치를 향해 길찾기 수행
+        // 매 타임아웃마다 경로를 새로 갱신(Re-pathing)하여 물풍선 변화에 즉각 반응하게 함
+        FindPath(playerPos);
+        targetPosition = playerPos;
+
+        if (!path.empty())
         {
-            if (state != MonsterState::Patrol)
-            { // 상태가 바뀔 때만 초기화.
-                state = MonsterState::Patrol;
-                path.clear();
-            }
+            Movement(); // 경로가 있으면 추적 이동
         }
         else
         {
-            state = MonsterState::Chase;
-        }
-
-        // 상태별 로직 실행.
-        if (state == MonsterState::Patrol)
-        {
+            // 경로가 없을 때(길이 막혔을 때)만 제자리 대기 혹은 순찰
             PatrolMove(*gameLevel);
             SetPosition(myPos + direction);
         }
-        else if (state == MonsterState::Chase)
-        {
-            if (targetPosition != playerPos || path.empty())
-            {
-                FindPath(playerPos);
-                targetPosition = playerPos;
 
-                if (path.empty())
-                {
-                    PatrolMove(*gameLevel);
-                    SetPosition(myPos + direction);
-                }
-            }
-            Movement();
-        }
         moveTimer.Reset();
     }
 }
+
+//밑에가 기존 거리기준 추적 순회 변경로직이 들어간 버전
+//void Monster::Tick(float deltaTime)
+//{
+//    moveTimer.Tick(deltaTime);
+//
+//    if (moveTimer.IsTimeOut())
+//    {
+//        GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
+//        if (!gameLevel) return; // nullptr 체크를 가장 위로.
+//
+//        Vector2 myPos = GetPosition();
+//        Vector2 playerPos = gameLevel->GetPlayerPosition();
+//        int distance = myPos.DistanceTo(playerPos);
+//
+//        // 상태 결정 및 관리.
+//        if (distance >= 7) 
+//        {
+//            if (state != MonsterState::Patrol)
+//            { // 상태가 바뀔 때만 초기화.
+//                state = MonsterState::Patrol;
+//                path.clear();
+//            }
+//        }
+//        else
+//        {
+//            state = MonsterState::Chase;
+//        }
+//
+//        // 상태별 로직 실행.
+//        if (state == MonsterState::Patrol)
+//        {
+//            PatrolMove(*gameLevel);
+//            SetPosition(myPos + direction);
+//        }
+//        else if (state == MonsterState::Chase)
+//        {
+//            if (targetPosition != playerPos || path.empty())
+//            {
+//                FindPath(playerPos);
+//                targetPosition = playerPos;
+//
+//                if (path.empty())
+//                {
+//                    PatrolMove(*gameLevel);
+//                    SetPosition(myPos + direction);
+//                }
+//            }
+//            Movement();
+//        }
+//        moveTimer.Reset();
+//    }
+//}
 void Monster::Movement()
 {
     // 이동 가능 여부만 판단.
@@ -136,6 +179,7 @@ void Monster::FindPath(Vector2 dest)
         if (!path.empty()) path.erase(path.begin());
     }
 }
+
 
 void Monster::PatrolMove(GameLevel& level)
 {

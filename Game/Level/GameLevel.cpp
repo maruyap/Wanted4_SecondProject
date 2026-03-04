@@ -259,6 +259,7 @@ Vector2 GameLevel::GetPlayerPosition()
 	return Vector2(0, 0);
 }
 
+
 void GameLevel::CollisionWaveAndOther(const Vector2& position)
 {
 	// 중심점에 이펙트 생성.
@@ -470,6 +471,9 @@ void GameLevel::Tick(float deltatime)
 	DrawUI();
 }
 
+
+
+
 void GameLevel::SpawnItem(const Vector2& position, int itemType)
 {
 	AddNewActor(new Item(position, itemType));
@@ -580,7 +584,7 @@ int GameLevel::MonsterCounter()
 
 void GameLevel::NextStage()
 {
-	LoadMap("Octo2.txt");
+	LoadMap("Test1.txt");
 }
 
 void GameLevel::EnemyAllKill()
@@ -590,4 +594,18 @@ void GameLevel::EnemyAllKill()
 		if (actor->IsTypeOf<Monster>() || actor->IsTypeOf<Boss>())
 			actor->Destroy();
 	}
+}
+
+void GameLevel::AddDanger(Vector2 pos, int value) 
+{
+	if (pos.x >= 0 && pos.x < 20 && pos.y >= 0 && pos.y < 20) 
+	{
+		dangerMap[pos.y][pos.x] += value;
+	}
+}
+
+// 현재 칸이 위험한지 확인하는 함수 (에이스타가 호출)
+int GameLevel::GetDangerValue(Vector2 pos)
+{
+	return dangerMap[pos.y][pos.x];
 }

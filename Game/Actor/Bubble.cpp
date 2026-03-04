@@ -15,6 +15,7 @@ Bubble::Bubble(const Vector2& position)
 
 Bubble::~Bubble()
 {
+    UpdateDangerMap(-1);
 }
 
 void Bubble::Tick(float deltaTime)
@@ -70,6 +71,10 @@ void Bubble::VisualizeDangerZone()
     Vector2 dirs[4] = { Vector2(0, -1), Vector2(0, 1), Vector2(-1, 0), Vector2(1, 0) };
 
     GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
+    if (gameLevel->player == nullptr)
+    {
+        return;
+    }
     int bombPower = gameLevel->player->bubbleScope;
     // 플레이어의 현재 사거리 사용
     for (int d = 0; d < 4; ++d)
@@ -106,9 +111,60 @@ void Bubble::VisualizeDangerZone()
 }
 
 
+
 void Bubble::Draw()
 {
     super::Draw();
 
     VisualizeDangerZone();
+}
+
+
+
+void Bubble::UpdateDangerMap(int value) // value가 1이면 위험 추가, -1이면 제거
+{
+    Vector2 dirs[4] = { {0, -1}, {0, 1}, {-1, 0}, {1, 0} };
+    GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
+
+    // 플레이어의 현재 사거리
+    int bombPower = gameLevel->player->bubbleScope;
+
+    // 1. 현재 물풍선 위치 위험도 업데이트
+    gameLevel->AddDanger(this->GetPosition(), value);
+
+    // 2. 4방향 확인
+    for (int d = 0; d < 4; ++d) {
+        for (int step = 1; step <= bombPower; ++step) {
+            Vector2 targetPos = position + (dirs[d] * step);
+            bool isBlocked = false;
+
+            // [액터 순회 부분]
+            // 예전 코드처럼 모든 액터를 돌면서 해당 위치에 벽이나 박스가 있는지 확인
+            for (Actor* actor : gameLevel->GetActors()) {
+                if (actor->DestroyRequested()) continue;
+
+                if (actor->GetPosition() == targetPos) {
+                    // 벽(Wall), 박스(Light/HeavyBox)는 줄기를 막음
+                    if (actor->IsTypeOf<Wall>() ||
+                        actor->IsTypeOf<LightBox>() ||
+                        actor->IsTypeOf<HeavyBox>()) {
+                        isBlocked = true;
+                        break;
+                    }
+                }
+            }
+
+            // 위험 수치 조절 (박스가 있는 칸까지는 위험 지역으로 표시하는 게 자연스러움)
+            gameLevel->AddDanger(targetPos, value);
+
+            // 벽이나 박스에 막혔다면 이 방향은 중단
+            if (isBlocked) break;
+        }
+    }
+}
+
+// 생성될 때
+void Bubble::BeginPlay() {
+    super::BeginPlay();
+    UpdateDangerMap(1); // 이 구역 위험도 +1
 }
