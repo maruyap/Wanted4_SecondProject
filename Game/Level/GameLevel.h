@@ -39,12 +39,12 @@ public:
 	void EnemyAllKill();
 
 	void DrawUI(); // 플레이어 UI 띄워주는 함수
-
+	Player* player = nullptr;
 private:
 	void LoadMap(const char* filename);
 
 private:
-	Player* player = nullptr;
+	
 	int playerLifeCount = 3;
 	Vector2 playerStartPosition = { -1, -1 };
 };

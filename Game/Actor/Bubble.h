@@ -16,9 +16,10 @@ public:
 	~Bubble();
 
 	virtual void Tick(float deltaTime) override;
-
+	virtual void Draw() override;
 	virtual bool IsBlocking() { return true; } // cankick = falseÀÎ°æ¿ì.
 	
+	void VisualizeDangerZone();
 public:
 	Vector2 moveDir = { 0, 0 };
 

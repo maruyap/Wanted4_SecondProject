@@ -13,6 +13,7 @@
 #include "Actor/WaveEffect.h"
 #include "Render/Renderer.h"
 #include "Actor/Boss.h"
+#include "Actor/Drone.h"
 #include <iostream>
 
 GameLevel* GameLevel::gameLevelInstance = nullptr;
@@ -168,6 +169,11 @@ void GameLevel::LoadMap(const char* filename)
 		case 'K':
 			// KickShoes 아이템 플레이어가 먹고 나면 물풍선을 차서 이동 시킴.
 			AddNewActor(new Item(position, 3));
+			AddNewActor(new Ground(position));
+			break;
+
+		case 'D':
+			AddNewActor(new Drone(position));
 			AddNewActor(new Ground(position));
 			break;
 		}
