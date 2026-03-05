@@ -246,6 +246,7 @@ void GameLevel::CollisionPlayerAndOther()
 		}
 	}
 	
+	InitCanMoveMap();
 }
 Vector2 GameLevel::GetPlayerPosition()
 {
@@ -608,4 +609,20 @@ void GameLevel::AddDanger(Vector2 pos, int value)
 int GameLevel::GetDangerValue(Vector2 pos)
 {
 	return dangerMap[pos.y][pos.x];
+}
+
+void GameLevel::InitCanMoveMap()
+{
+	// 1. 가로, 세로 크기 설정.
+	const int mapWidth = 20;
+	const int mapHeight = 20;
+
+	// 2. 2차원 벡터를 0으로 초기화하며 할당
+	// std::vector<T>(개수, 초기값) 문법
+	// 외부 벡터는 행(Height)의 개수만큼, 내부 벡터는 열(Width)의 개수만큼 생성.
+	canMoveMap = std::vector<std::vector<int>>(
+		mapHeight,
+		std::vector<int>(mapWidth, 0)
+	);
+
 }

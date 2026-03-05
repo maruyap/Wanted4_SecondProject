@@ -8,17 +8,59 @@ Monster::Monster(const Vector2& Position)
 	: super("M", Position, Color::Red)
 {
 	sortingOrder = 11;
-    //astar = new AStar();
+    astar = new AStar();
 }
 
 Monster::~Monster()
 {
-    //if (astar) delete astar;
+   /* if (astar)
+    {
+        delete astar;
+        astar = nullptr;
+    }*/
 }
 
-// 기존BFS추적과 에이스타추적의 시각화 비교목적을 위한 버전
+// 기존BFS추적과 에이스타추적의 시각화 비교목적을 위한 버전.
+//void Monster::Tick(float deltaTime)
+//{
+//    moveTimer.Tick(deltaTime);
+//
+//    if (moveTimer.IsTimeOut())
+//    {
+//        GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
+//        if (!gameLevel) return;
+//
+//        Vector2 myPos = GetPosition();
+//        Vector2 playerPos = gameLevel->GetPlayerPosition();
+//
+//        // 거리와 상관없이 무조건 추적 상태로 설정.
+//        state = MonsterState::Chase;
+//
+//        // 항상 플레이어의 위치를 향해 길찾기 수행.
+//        // 매 타임아웃마다 경로를 새로 갱신하여 물풍선 변화에 즉각 반응하게 함.
+//        FindPath(playerPos);
+//        targetPosition = playerPos;
+//
+//        if (!path.empty())
+//        {
+//            Movement(); // 경로가 있으면 추적 이동.
+//        }
+//        else
+//        {
+//            // 경로가 없을 때(길이 막혔을 때)만 제자리 대기 혹은 순찰.
+//            PatrolMove(*gameLevel);
+//            SetPosition(myPos + direction);
+//        }
+//
+//        moveTimer.Reset();
+//    }
+//}
+
+// 비교를 위한 순찰 제거 에이스타 추적버전Tick
 void Monster::Tick(float deltaTime)
 {
+    if (DestroyRequested()) return;
+
     moveTimer.Tick(deltaTime);
 
     if (moveTimer.IsTimeOut())
@@ -29,21 +71,21 @@ void Monster::Tick(float deltaTime)
         Vector2 myPos = GetPosition();
         Vector2 playerPos = gameLevel->GetPlayerPosition();
 
-        // [수정 포인트 1] 거리와 상관없이 무조건 추적 상태로 설정
+        // 거리와 상관없이 무조건 추적 상태로 설정.
         state = MonsterState::Chase;
 
-        // [수정 포인트 2] 항상 플레이어의 위치를 향해 길찾기 수행
-        // 매 타임아웃마다 경로를 새로 갱신(Re-pathing)하여 물풍선 변화에 즉각 반응하게 함
-        FindPath(playerPos);
+        // 항상 플레이어의 위치를 향해 길찾기 수행.
+        // 매 타임아웃마다 경로를 새로 갱신하여 물풍선 변화에 즉각 반응하게 함.
+        UpdatePath(playerPos);
         targetPosition = playerPos;
 
         if (!path.empty())
         {
-            Movement(); // 경로가 있으면 추적 이동
+            Movement(); // 경로가 있으면 추적 이동.
         }
         else
         {
-            // 경로가 없을 때(길이 막혔을 때)만 제자리 대기 혹은 순찰
+            // 경로가 없을 때(길이 막혔을 때)만 제자리 대기 혹은 순찰.
             PatrolMove(*gameLevel);
             SetPosition(myPos + direction);
         }
@@ -51,6 +93,8 @@ void Monster::Tick(float deltaTime)
         moveTimer.Reset();
     }
 }
+
+
 
 //밑에가 기존 거리기준 추적 순회 변경로직이 들어간 버전
 //void Monster::Tick(float deltaTime)
@@ -104,6 +148,31 @@ void Monster::Tick(float deltaTime)
 //        moveTimer.Reset();
 //    }
 //}
+
+// 밑에꺼 순찰모드 뺀 BFS추적버전
+//void Monster::Movement()
+//{
+//    // 이동 가능 여부만 판단.
+//    if (path.empty() || pathIndex >= (int)path.size()) return;
+//
+//    Vector2 nextPosition = path[pathIndex];
+//    GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
+//
+//    if (gameLevel && gameLevel->CanMonsterOrBubbleMove(nextPosition)) 
+//    {
+//        SetPosition(nextPosition);
+//        pathIndex++;
+//    }
+//    else 
+//    {
+//        // 길이 막혔을 때만 재탐색.
+//        FindPath(targetPosition);
+//    }
+//
+//}
+
+
+// 밑에꺼 에이스타 추적버전
 void Monster::Movement()
 {
     // 이동 가능 여부만 판단.
@@ -112,15 +181,15 @@ void Monster::Movement()
     Vector2 nextPosition = path[pathIndex];
     GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
 
-    if (gameLevel && gameLevel->CanMonsterOrBubbleMove(nextPosition)) 
+    if (gameLevel && gameLevel->CanMonsterOrBubbleMove(nextPosition))
     {
         SetPosition(nextPosition);
         pathIndex++;
     }
-    else 
+    else
     {
         // 길이 막혔을 때만 재탐색.
-        FindPath(targetPosition);
+        UpdatePath(targetPosition);
     }
 
 }
@@ -180,6 +249,53 @@ void Monster::FindPath(Vector2 dest)
     }
 }
 
+
+void Monster::UpdatePath(Vector2 dest)
+{
+    path.clear();
+
+    GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
+    if (gameLevel == nullptr || DestroyRequested()) return;
+
+    // 원본 맵이 비어있으면 초기화.
+    if (gameLevel->canMoveMap.empty()) gameLevel->InitCanMoveMap();
+
+    // 원본을 직접 쓰지 말고 복사본 사용.
+    std::vector<std::vector<int>> localMap = gameLevel->canMoveMap;
+
+    // 현재 프레임의 동적인 장애물(다른 액터들) 정보를 복사본에만 기록.
+    const std::vector<Actor*>& actors = gameLevel->GetActors();
+    for (Actor* actor : actors)
+    {
+        // 자기 자신은 장애물에서 제외해야 길을 찾기 시작할 수 있음.
+        if (actor == this) continue;
+
+        if (actor->IsBlocking())
+        {
+            Vector2 actorPos = actor->GetPosition();
+            // 인덱스 범위 체크 (안전장치).
+            if (actorPos.y >= 0 && actorPos.y < localMap.size() &&
+                actorPos.x >= 0 && actorPos.x < localMap[0].size())
+            {
+                localMap[actorPos.y][actorPos.x] = 1;
+            }
+        }
+    }
+
+    Node* startNode = new Node(position.x, position.y);
+    Node* goalNode = new Node(dest.x, dest.y);
+
+    // 4. 복사본을 전달해서 탐색.
+    std::vector<Node*> resultPath = astar->FindPath(startNode, goalNode, localMap);
+
+    path.clear();
+    for (Node* node : resultPath)
+    {
+        path.emplace_back(node->vector2);
+    }
+
+   
+}
 
 void Monster::PatrolMove(GameLevel& level)
 {

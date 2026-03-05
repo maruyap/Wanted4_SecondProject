@@ -104,6 +104,7 @@
     <ClCompile Include="Level\GameLevel.cpp" />
     <ClCompile Include="Level\MenuLevel.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Util\Astar.cpp" />
     <ClCompile Include="Util\Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -122,6 +123,8 @@
     <ClInclude Include="Interface\IcanPlayerMove.h" />
     <ClInclude Include="Level\GameLevel.h" />
     <ClInclude Include="Level\MenuLevel.h" />
+    <ClInclude Include="Util\Astar.h" />
+    <ClInclude Include="Util\Node.h" />
     <ClInclude Include="Util\Timer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
