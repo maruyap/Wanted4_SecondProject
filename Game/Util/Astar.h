@@ -37,8 +37,8 @@ public:
 	// grid: 탐색할 맵 (2차원 배열).
 	std::vector<Vector2> FindPath(
 		Vector2 startPos, Vector2 goalPos,
-		std::vector<std::vector<int>>& grid
-	);
+		std::vector<std::vector<int>>& grid,
+		std::vector<std::vector<int>>& dangerMap);
 
 	// 맵(그리드) 출력 함수.
 	void DisplayGridWithPath(

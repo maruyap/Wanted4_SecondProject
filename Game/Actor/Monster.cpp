@@ -261,7 +261,7 @@ void Monster::UpdatePath(Vector2 dest)
     gameLevel->UpdateCanMoveMap();
 
     // 에이스타 실행
-    std::vector<Vector2> resultPath = sharedAstar->FindPath(GetPosition(), dest, gameLevel->canMoveMap);
+    std::vector<Vector2> resultPath = sharedAstar->FindPath(GetPosition(), dest, gameLevel->canMoveMap, gameLevel->dangerMap);
 
     // 4. 결과를 몬스터 자신의 경로 변수에 담기.
     this->path = resultPath;

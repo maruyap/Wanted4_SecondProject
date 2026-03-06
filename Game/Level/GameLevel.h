@@ -50,13 +50,13 @@ public:
 
 	void UpdateCanMoveMap();
 	std::vector<std::vector<int>> canMoveMap; // 0이 이동가능 1이 이동불가(ex 벽, 무거운박스등)
-	
+	std::vector<std::vector<int>> dangerMap;
 	AStar* GetAStar() const { return astar; } // Astar을 활용할 객체가 받아서 사용.
 private:
 	void LoadMap(const char* filename);
 
 private:
-	std::vector<std::vector<int>> dangerMap;
+	
 	
 	AStar* astar = nullptr;
 

@@ -29,9 +29,11 @@ void AStar::ClearLists()
 	startNode = nullptr;
 	goalNode = nullptr;
 }
+/*
 std::vector<Vector2> AStar::FindPath(
 	Vector2 startPos, Vector2 goalPos,
-	std::vector<std::vector<int>>& grid)
+	std::vector<std::vector<int>>& grid,
+	std::vector<std::vector<int>>& dangerMap)
 {
 	// 이전 탐색 데이터 및 메모리 완전 정리.
 	ClearLists();
@@ -104,7 +106,131 @@ std::vector<Vector2> AStar::FindPath(
 				continue;
 			}
 
-			// 임시 노드 생성을 지양 필요할 때만 MakeNewNode를 호출.
+			// 임시 노드 생성을 지양 필요할 때만 MakeNewNode를 호출
+			// 먼저 열린 리스트에 이미 해당 위치의 노드가 있는지 검색.
+			Node* openListNode = nullptr;
+			for (Node* const node : openList)
+			{
+				if (node->vector2.x == newX && node->vector2.y == newY)
+				{
+					openListNode = node;
+					break;
+				}
+			}
+
+			if (openListNode)
+			{
+				// 이미 열린 리스트에 있다면 비용 비교 후 업데이트만 진행
+				if (newGCost < openListNode->gCost)
+				{
+					openListNode->parentNode = currentNode;
+					openListNode->gCost = newGCost;
+					openListNode->fCost = openListNode->gCost + openListNode->hCost;
+				}
+				continue;
+			}
+
+			// 여기에 없어야만 새로운 노드를 생성.
+			Node* neighborNode = MakeNewNode(newX, newY);
+			neighborNode->parentNode = currentNode;
+			neighborNode->gCost = newGCost;
+			neighborNode->hCost = CalculateHeuristic(neighborNode, this->goalNode);
+			neighborNode->fCost = neighborNode->gCost + neighborNode->hCost;
+
+			if (grid[newY][newX] == 0)
+			{
+				grid[newY][newX] = 5; // 탐색 시각화.
+			}
+
+			openList.emplace_back(neighborNode);
+		}
+	}
+
+	return { };
+}
+*/
+
+std::vector<Vector2> AStar::FindPath(
+	Vector2 startPos, Vector2 goalPos,
+	std::vector<std::vector<int>>& grid,
+	std::vector<std::vector<int>>& dangerMap)
+{
+	// 이전 탐색 데이터 및 메모리 완전 정리.
+	ClearLists();
+
+	// 시작/목표 노드 생성 MakeNewNode 사용
+	this->startNode = MakeNewNode((int)startPos.x, (int)startPos.y);
+	this->goalNode = MakeNewNode((int)goalPos.x, (int)goalPos.y);
+
+	if (!this->startNode || !this->goalNode || grid.empty() || grid[0].empty())
+	{
+		return { };
+	}
+
+	// 시작 노드 설정.
+	openList.emplace_back(this->startNode);
+
+	// [수정] 이동 비용 단위를 10으로 설정.
+	std::vector<Direction> directions =
+	{
+		{ -1, 0, 10 },  { 1, 0, 10 },{ 0, -1, 10 }, { 0, 1, 10 }
+	};
+
+	while (!openList.empty())
+	{
+		// fCost가 가장 낮은 노드 검색.
+		Node* currentNode = openList[0];
+		for (Node* const node : openList)
+		{
+			if (node->fCost < currentNode->fCost)
+			{
+				currentNode = node;
+			}
+		}
+
+		// 목적지 도착 확인.
+		if (IsDestination(currentNode))
+		{
+			return ConstructPath(currentNode);
+		}
+
+		// 열린 리스트에서 현재 노드 제거.
+		for (auto it = openList.begin(); it != openList.end(); ++it)
+		{
+			if ((*it) == currentNode)
+			{
+				openList.erase(it);
+				break;
+			}
+		}
+
+		// 방문 노드(닫힌 리스트)에 추가.
+		closedList.emplace_back(currentNode);
+
+		// 이웃 노드 탐색.
+		for (const Direction& direction : directions)
+		{
+			int newX = currentNode->vector2.x + direction.x;
+			int newY = currentNode->vector2.y + direction.y;
+
+			// 유효성 및 장애물 검사.
+			if (!IsInRange(newX, newY, grid) || grid[newY][newX] == 1)
+			{
+				continue;
+			}
+
+			// 위험 지역(dangerMap == 1)일 경우 가중치(70)를 더함.
+			// 이동 비용 단위가 10이므로, 70을 더하면 약 7칸을 돌아가는 것과 같은 비용이 됨.
+			int weight = (dangerMap[newY][newX] == 1) ? 70 : 0;
+			int newGCost = currentNode->gCost + direction.cost + weight;
+
+			// 이미 방문했는지 확인.
+			if (HasVisited(newX, newY, newGCost))
+			{
+				continue;
+			}
+
+			// 임시 노드 생성을 지양 필요할 때만 MakeNewNode를 호출
 			// 먼저 열린 리스트에 이미 해당 위치의 노드가 있는지 검색.
 			Node* openListNode = nullptr;
 			for (Node* const node : openList)
@@ -146,7 +272,6 @@ std::vector<Vector2> AStar::FindPath(
 
 	return { };
 }
-
 void AStar::DisplayGridWithPath(
 	std::vector<std::vector<int>>& grid,
 	const std::vector<Node*>& path)
