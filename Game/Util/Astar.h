@@ -35,8 +35,8 @@ public:
 	// startNode: 시작 지점.
 	// goalNode: 목표 지점.
 	// grid: 탐색할 맵 (2차원 배열).
-	std::vector<Node*> FindPath(
-		Node* startNode, Node* goalNode,
+	std::vector<Vector2> FindPath(
+		Vector2 startPos, Vector2 goalPos,
 		std::vector<std::vector<int>>& grid
 	);
 
@@ -45,13 +45,13 @@ public:
 		std::vector<std::vector<int>>& grid,
 		const std::vector<Node*>& path
 	);
-
+	void ClearLists();
 private:
 	// 객체 지향 이론에서 -> 메소드(Method) - 비공개 멤버 함수.
 
 	// 탐색을 완료한 후에 최적 경로 반환하는 함수.
 	// 부모링크를 따라가면서 역추적.
-	std::vector<Node*> ConstructPath(Node* goalNode);
+	std::vector<Vector2> ConstructPath(Node* goalNode);
 
 	// 휴리스틱(hCost) 계산 함수.
 	int CalculateHeuristic(Node* currentNode, Node* goalNode);
@@ -69,12 +69,17 @@ private:
 	// 그리드 출력 함수.
 	void DisplayGrid(std::vector<std::vector<int>>& grid);
 
+	// 노드 생성 후 마스터 노드리스트에 담는 함수.
+	Node* MakeNewNode(int x, int y);
 private:
 	// 열린 리스트.
 	std::vector<Node*> openList;
 
 	// 닫힌 리스트.
 	std::vector<Node*> closedList;
+
+	// 할당된 모든 노드가 담긴 리스트.
+	std::vector<Node*> allNodes;
 
 	// 시작 노드.
 	Node* startNode = nullptr;

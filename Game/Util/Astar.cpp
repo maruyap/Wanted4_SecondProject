@@ -4,205 +4,156 @@
 #include <cmath>
 #include <Windows.h>
 #include <iostream>
-
+#include <set>
 AStar::AStar()
 {
 }
 
 AStar::~AStar()
 {
-	// 메모리 정리.
-	for (Node* node : openList)
-	{
-		NodeSafeDelete(node);
-	}
-	openList.clear();
-
-	for (Node* node : closedList)
-	{
-		NodeSafeDelete(node);
-	}
-	closedList.clear();
-	NodeSafeDelete(startNode);
-	NodeSafeDelete(goalNode);
+	ClearLists();
 }
 
-std::vector<Node*> AStar::FindPath(
-	Node* startNode, Node* goalNode,
+void AStar::ClearLists()
+{
+	// 마스터 리스트에 담긴 것만 다 지우기.
+	for (Node* node : allNodes) {
+		if (node) {
+			delete node;
+		}
+	}
+	allNodes.clear();      // 해제된 주소를 가리키는 주소값 비우기.
+	openList.clear();      
+	closedList.clear();   
+
+	startNode = nullptr;
+	goalNode = nullptr;
+}
+std::vector<Vector2> AStar::FindPath(
+	Vector2 startPos, Vector2 goalPos,
 	std::vector<std::vector<int>>& grid)
 {
-	for (Node* node : openList) { delete node; }
-	for (Node* node : closedList) { delete node; }
-	openList.clear();
-	closedList.clear();
+	// 이전 탐색 데이터 및 메모리 완전 정리.
+	ClearLists();
 
-	this->startNode = startNode;
-	this->goalNode = goalNode;
-	// 시작/목표 노드 저장.
-	this->startNode = startNode;
-	this->goalNode = goalNode;
+	// 시작/목표 노드 생성 MakeNewNode 사용
+	this->startNode = MakeNewNode((int)startPos.x, (int)startPos.y);
+	this->goalNode = MakeNewNode((int)goalPos.x, (int)goalPos.y);
 
-	// 예외처리.
-	if (!this->startNode || !this->goalNode
-		|| grid.empty() || grid[0].empty())
+	if (!this->startNode || !this->goalNode || grid.empty() || grid[0].empty())
 	{
-		// 빈 경로 반환 (오류).
-		//return std::vector<Node*>();
 		return { };
 	}
 
-	// 시작 노드를 열린리스트에 추가 및 탐색 시작.
+	// 시작 노드 설정.
 	openList.emplace_back(this->startNode);
 
-	// 비용 계산에 사용할 변수 값 설정.
 	std::vector<Direction> directions =
 	{
-		{0, 1, 1}, {0, -1, 1}, {1, 0, 1}, {-1 , 0, 1}
+		{ -1, 0, 1 },  { 1, 0, 1 },{ 0, -1, 1 }, { 0, 1, 1 }
 	};
 
-	// 탐색 가능한 위치가 있으면 계속 진행.
 	while (!openList.empty())
 	{
-		// 현재 열린 리스트에 있는 노드 중 fCost가 가장 낮은 노드 검색.
-		Node* lowestNode = openList[0];
-		// 가장 비용이 작은 노드 검색 (선형 탐색).
+		// fCost가 가장 낮은 노드 검색.
+		Node* currentNode = openList[0];
 		for (Node* const node : openList)
 		{
-			// 비용이 더 작은 노드가 있으면 설정.
-			if (node->fCost < lowestNode->fCost)
+			if (node->fCost < currentNode->fCost)
 			{
-				lowestNode = node;
+				currentNode = node;
 			}
 		}
 
-		// fCost가 가장 낮은 노드를 현재 노드로 설정.
-		Node* currentNode = lowestNode;
-
-		// 현재 노드가 목표 노드인지 확인.
+		// 목적지 도착 확인.
 		if (IsDestination(currentNode))
 		{
-			// 여기에 goalNode를 메모리 정리용도로 목록에 추가 가능.
-
-			// 경로 반환 후 종료.
 			return ConstructPath(currentNode);
 		}
 
-		// 방문 처리를 위해 열린 리스트에서 제거.
-		for (auto iterator = openList.begin();
-			iterator != openList.end();
-			++iterator)
+		// 열린 리스트에서 현재 노드 제거.
+		for (auto it = openList.begin(); it != openList.end(); ++it)
 		{
-			// iterator 위치의 노드가 currentNode인지 확인.
-			if ((*iterator) == currentNode)
+			if ((*it) == currentNode)
 			{
-				openList.erase(iterator);
+				openList.erase(it);
 				break;
 			}
 		}
 
-		// 현재 노드를 방문 노드에 추가.
+		// 방문 노드(닫힌 리스트)에 추가.
 		closedList.emplace_back(currentNode);
 
-
-		// 이웃 노드 방문(탐색).
+		// 이웃 노드 탐색.
 		for (const Direction& direction : directions)
 		{
-			// 다음에 이동할 위치(이웃 노드의 위치).
 			int newX = currentNode->vector2.x + direction.x;
 			int newY = currentNode->vector2.y + direction.y;
 
-			// 유효성 검증 (새 위치가 이동 가능한지 확인).
-			if (!IsInRange(newX, newY, grid))
+			// 유효성 및 장애물 검사.
+			if (!IsInRange(newX, newY, grid) || grid[newY][newX] == 1)
 			{
 				continue;
 			}
 
-			// 새 위치가 이동 가능한 곳인지 확인.
-			// 장애물(못가는곳) = 1.
-			if (grid[newY][newX] == 1)
-			{
-				continue;
-			}
-
-			// 현재 노드를 기준으로 새 gCost 계산.
 			int newGCost = currentNode->gCost + direction.cost;
 
-			// 갈 수는 있지만, 이미 방문한 곳인지 확인.
+			// 이미 방문했는지 확인.
 			if (HasVisited(newX, newY, newGCost))
 			{
 				continue;
 			}
 
-			// 방문을 위한 이웃 노드 생성.
-			Node* neighborNode = new Node(newX, newY, currentNode);
-			// 비용 계산.
-			neighborNode->gCost = newGCost;
-			neighborNode->hCost = CalculateHeuristic(
-				neighborNode, this->goalNode
-			);
-			neighborNode->fCost = neighborNode->gCost + neighborNode->hCost;
-
-			// 이웃 노드가 열린 리스트에 있는지 확인.
+			// 임시 노드 생성을 지양 필요할 때만 MakeNewNode를 호출.
+			// 먼저 열린 리스트에 이미 해당 위치의 노드가 있는지 검색.
 			Node* openListNode = nullptr;
 			for (Node* const node : openList)
 			{
-				// 위치만 비교해서 열린 리스트에 넣을지 여부 확인.
-				if (*node == *neighborNode)
+				if (node->vector2.x == newX && node->vector2.y == newY)
 				{
 					openListNode = node;
 					break;
 				}
 			}
 
-			// 이웃 노드가 열린 리스트에 있으면 더 좋은 비용일 때만 처리.
 			if (openListNode)
 			{
-				// 비용 확인.
-				if (neighborNode->gCost < openListNode->gCost
-					|| neighborNode->fCost < openListNode->fCost)
+				// 이미 열린 리스트에 있다면 비용 비교 후 업데이트만 진행.
+				if (newGCost < openListNode->gCost)
 				{
-					// 부모 노드 업데이트.
-					openListNode->parentNode = neighborNode->parentNode;
-					// 비용 업데이트.
-					openListNode->gCost = neighborNode->gCost;
-					openListNode->hCost = neighborNode->hCost;
-					openListNode->fCost = neighborNode->fCost;
+					openListNode->parentNode = currentNode;
+					openListNode->gCost = newGCost;
+					openListNode->fCost = openListNode->gCost + openListNode->hCost;
 				}
-
-				// 임시 노드 메모리 정리.
-				NodeSafeDelete(neighborNode);
 				continue;
 			}
 
-			// 방문할 목록에 추가.
-			// 이 노드가 이동 가능한지 확인
-			// 이동 가능한 곳 = 0.
-			//if (grid[newY][newX] == 0)
-			//{
-			//	// 시각화를 위해 사용 안하는 값 정해서 설정.
-			//	grid[newY][newX] = 5;
-			//}
+			// 여기에 없어야만 새로운 노드를 생성.
+			Node* neighborNode = MakeNewNode(newX, newY);
+			neighborNode->parentNode = currentNode;
+			neighborNode->gCost = newGCost;
+			neighborNode->hCost = CalculateHeuristic(neighborNode, this->goalNode);
+			neighborNode->fCost = neighborNode->gCost + neighborNode->hCost;
 
-			// 열린 리스트에 추가.
+			if (grid[newY][newX] == 0)
+			{
+				grid[newY][newX] = 5; // 탐색 시각화.
+			}
+
 			openList.emplace_back(neighborNode);
-
-			// 잠시 대기 (옵션).
-			//DisplayGrid(grid);
-			//DWORD delay = static_cast<DWORD>(0.05f * 1000);
-			//Sleep(delay);
 		}
 	}
 
-	return  { };
+	return { };
 }
 
 void AStar::DisplayGridWithPath(
 	std::vector<std::vector<int>>& grid,
 	const std::vector<Node*>& path)
 {
-	static COORD vector2 = { 0,0 };
+	static COORD position = { 0,0 };
 	static HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleCursorPosition(handle, vector2);
+	SetConsoleCursorPosition(handle, position);
 
 	static int white = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
 	static int green = FOREGROUND_GREEN;
@@ -268,10 +219,10 @@ void AStar::DisplayGridWithPath(
 	for (Node* const node : path)
 	{
 		// 경로는 '*' 표시.
-		vector2.X = static_cast<short>(node->vector2.x * 2);
-		vector2.Y = static_cast<short>(node->vector2.y);
+		position.X = static_cast<short>(node->vector2.x * 2);
+		position.Y = static_cast<short>(node->vector2.y);
 
-		SetConsoleCursorPosition(handle, vector2);
+		SetConsoleCursorPosition(handle, position);
 		SetConsoleTextAttribute(handle, green);
 
 		std::cout << "* ";
@@ -281,27 +232,20 @@ void AStar::DisplayGridWithPath(
 	}
 
 	// 위치 초기화.
-	vector2.X = 0;
-	vector2.Y = 0;
+	position.X = 0;
+	position.Y = 0;
 }
 
-std::vector<Node*> AStar::ConstructPath(Node* goalNode)
+std::vector<Vector2> AStar::ConstructPath(Node* goalNode)
 {
-	// 경로를 저장할 배열 선언.
-	std::vector<Node*> path;
-
-	// 역추적하면서 path에 채우기.
-	Node* currentNode = goalNode;
-	while (currentNode)
-	{
-		path.emplace_back(currentNode);
-		currentNode = currentNode->parentNode;
-	}
-
-	// 이렇게 얻은 결과는 순서가 거꾸로.
-	// 그래서 거꾸로 다시 정렬이 필요함.
-	std::reverse(path.begin(), path.end());
-	return path;
+	std::vector<Vector2> path;
+    Node* currentNode = goalNode;
+    while (currentNode) {
+        path.push_back(currentNode->vector2); // 좌표값 복사
+        currentNode = currentNode->parentNode;
+    }
+    std::reverse(path.begin(), path.end());
+    return path;
 }
 
 int AStar::CalculateHeuristic(Node* currentNode, Node* goalNode)
@@ -310,8 +254,12 @@ int AStar::CalculateHeuristic(Node* currentNode, Node* goalNode)
 	// 고민해볼 계산 방식.
 	// 현재노드에서 목표 노드까지의 비용 계산.
 	// 단순 거리를 휴리스틱 비용으로 계산.
-	return std::abs(currentNode->vector2.x - goalNode->vector2.x) +
-		std::abs(currentNode->vector2.y - goalNode->vector2.y);
+	// 현재 노드와 목표 노드의 x, y 좌표 차이의 절대값을 합산.
+	int dx = std::abs(currentNode->vector2.x - goalNode->vector2.x);
+	int dy = std::abs(currentNode->vector2.y - goalNode->vector2.y);
+
+	// 이동 비용 단위가 10이므로 거리 합 * 10.
+	return (dx + dy) * 10;
 }
 
 bool AStar::IsInRange(
@@ -370,9 +318,9 @@ bool AStar::IsDestination(const Node* const node)
 void AStar::DisplayGrid(std::vector<std::vector<int>>& grid)
 {
 	// 좌표 변수.
-	static COORD vector2 = { 0, 0 };
+	static COORD position = { 0, 0 };
 	static HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
-	SetConsoleCursorPosition(handle, vector2);
+	SetConsoleCursorPosition(handle, position);
 
 	// 색상 값.
 	static int white = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
@@ -429,6 +377,20 @@ void AStar::DisplayGrid(std::vector<std::vector<int>>& grid)
 	}
 
 	// 위치 초기화.
-	vector2.X = 0;
-	vector2.Y = 0;
+	position.X = 0;
+	position.Y = 0;
+}
+Node* AStar::MakeNewNode(int x, int y) {
+	Node* newNode = new Node(x, y);
+
+	// 부모 노드나 이동비용은 0이나 nullptr로 초기화.
+	newNode->parentNode = nullptr;
+	newNode->gCost = 0;
+	newNode->hCost = 0;
+	newNode->fCost = 0;
+
+	// 생성된 모든 노드를 AllNode에 담기.
+	allNodes.push_back(newNode);
+
+	return newNode;
 }

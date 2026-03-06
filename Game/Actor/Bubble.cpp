@@ -127,6 +127,8 @@ void Bubble::UpdateDangerMap(int value) // value가 1이면 위험 추가, -1이면 제거
     GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
 
     // 플레이어의 현재 사거리
+    if (gameLevel == nullptr || gameLevel->player == nullptr)
+        return;
     int bombPower = gameLevel->player->bubbleScope;
 
     // 1. 현재 물풍선 위치 위험도 업데이트

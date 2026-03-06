@@ -1,10 +1,7 @@
 #pragma once
-
 #include "Math/Vector2.h"
-
-using namespace Wanted;
 // 콘솔 좌표에서 위치를 나타날 클래스.
-
+using namespace Wanted;
 
 class Node
 {

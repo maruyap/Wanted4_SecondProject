@@ -23,12 +23,20 @@ GameLevel::GameLevel()
 	gameLevelInstance = this;
 	Util::SetRandomSeed();
 
+	astar = new AStar();
+
 	LoadMap("Octo1.txt");
 	// Octo1.txt or Patrit14.txt or Test1.txt.
 }
 
 GameLevel::~GameLevel()
 {
+	if (astar) {
+		// [핵심] 레벨이 꺼지기 전에 마지막으로 남은 노드들 청소
+		astar->ClearLists();
+		delete astar;
+		astar = nullptr;
+	}
 }
 
 // H == HeavyBox(밀수없으나 파괴는 가능한 박스).
@@ -41,6 +49,8 @@ GameLevel::~GameLevel()
 
 void GameLevel::LoadMap(const char* filename)
 {
+	InitCanMoveMap();
+
 	// 파일 로드.
 	// 최종 파일 경로 만들기. ("../Assets/filename")
 	char path[2048] = {};
@@ -246,7 +256,7 @@ void GameLevel::CollisionPlayerAndOther()
 		}
 	}
 	
-	InitCanMoveMap();
+	
 }
 Vector2 GameLevel::GetPlayerPosition()
 {
@@ -625,4 +635,24 @@ void GameLevel::InitCanMoveMap()
 		std::vector<int>(mapWidth, 0)
 	);
 
+}
+
+void GameLevel::UpdateCanMoveMap()
+{
+	for (int y = 0; y < 17; ++y) // MAP_HEIGHT는 맵의 세로 크기
+	{
+		for (int x = 0; x < 19; ++x) // MAP_WIDTH는 맵의 가로 크기
+		{
+			canMoveMap[y][x] = 0;
+		}
+	}
+	for (auto& actor : actors)
+	{
+		if (actor->IsTypeOf<LightBox>() || actor->IsTypeOf<HeavyBox>() ||
+			actor->IsTypeOf<Bubble>() || actor->IsTypeOf<Wall>())
+		{
+			Vector2 actorPos = actor->GetPosition();
+			canMoveMap[actorPos.y][actorPos.x] = 1;
+		}
+	}
 }

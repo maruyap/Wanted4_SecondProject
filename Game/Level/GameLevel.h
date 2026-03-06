@@ -3,7 +3,7 @@
 #include "Level/Level.h"
 #include "Interface/IcanPlayerMove.h"
 #include "Util/Util.h"
-
+#include "Util/Astar.h"
 using namespace Wanted;
 
 class Player;
@@ -47,13 +47,18 @@ public:
 
 	void InitCanMoveMap();
 
+	void UpdateCanMoveMap();
 	std::vector<std::vector<int>> canMoveMap; // 0이 이동가능 1이 이동불가(ex 벽, 무거운박스등)
+	
+	AStar* GetAStar() const { return astar; } // Astar을 활용할 객체가 받아서 사용.
 private:
 	void LoadMap(const char* filename);
 
 private:
 	int dangerMap[20][20] = { 0, };
 	
+	AStar* astar = nullptr;
+
 	int playerLifeCount = 3;
 	Vector2 playerStartPosition = { -1, -1 };
 };
