@@ -4,6 +4,7 @@
 #include "Interface/IcanPlayerMove.h"
 #include "Util/Util.h"
 #include "Util/Astar.h"
+
 using namespace Wanted;
 
 class Player;
@@ -45,7 +46,7 @@ public:
 	int GetDangerValue(Vector2 pos); // Astar의 물풍선가중치를 위해 호출예정
 	Player* player = nullptr;
 
-	void InitCanMoveMap();
+	void InitCanMoveMapAndDangerMap();
 
 	void UpdateCanMoveMap();
 	std::vector<std::vector<int>> canMoveMap; // 0이 이동가능 1이 이동불가(ex 벽, 무거운박스등)
@@ -55,10 +56,13 @@ private:
 	void LoadMap(const char* filename);
 
 private:
-	int dangerMap[20][20] = { 0, };
+	std::vector<std::vector<int>> dangerMap;
 	
 	AStar* astar = nullptr;
 
 	int playerLifeCount = 3;
+
+	int mapWidth = 0;
+	int mapHeight = 0;
 	Vector2 playerStartPosition = { -1, -1 };
 };

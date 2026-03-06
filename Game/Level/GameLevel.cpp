@@ -49,8 +49,6 @@ GameLevel::~GameLevel()
 
 void GameLevel::LoadMap(const char* filename)
 {
-	InitCanMoveMap();
-
 	// 파일 로드.
 	// 최종 파일 경로 만들기. ("../Assets/filename")
 	char path[2048] = {};
@@ -63,141 +61,114 @@ void GameLevel::LoadMap(const char* filename)
 	// 예외 처리.
 	if (!file)
 	{
-		// 표준 오류 콘솔 활용.
 		std::cerr << "Failed to open map file.\n";
-
-		// 디버그 모드에서 중단점으로 중단해주는 기능.
 		__debugbreak();
 	}
 
 	// 맵 읽기.
-	// 맵 크기 파악: File Position 포인터를 파일의 끝으로 이동.
 	fseek(file, 0, SEEK_END);
-
-	// 이 위치 읽기.
 	size_t fileSize = ftell(file);
-
-	// File Position 처음으로 되돌리기.
 	rewind(file);
 
-	// 파일에서 데이터를 읽어올 버퍼 생성.
 	char* data = new char[fileSize + 1];
-
-	// 데이터 읽기.
 	size_t readSize = fread(data, sizeof(char), fileSize, file);
+	data[readSize] = '\0'; // 안전을 위해 널 문자 추가.
 
-	// 읽어온 문자열을 분석(파싱-Parsing)해서 출력.
-	// 인덱스를 사용해 한문자씩 읽기.
 	int index = 0;
-
-	// 객체를 생성할 위치 값.
 	Wanted::Vector2 position;
+
+	//맵 크기 초기화.
+	mapWidth = 0;
+	mapHeight = 0;
 
 	while (true)
 	{
-		// 종료 조건.
 		if (index >= fileSize)
 		{
+			// 파일 끝에 도달했을 때 마지막 줄의 높이를 반영.
+			if (position.x > 0)
+			{
+				if (position.x > mapWidth) mapWidth = (int)position.x;
+				mapHeight = (int)position.y + 1;
+			}
 			break;
 		}
 
-		// 캐릭터 읽기.
 		char mapCharacter = data[index];
 		++index;
 
-		// 개행 문자 처리.
+		// 윈도우 스타일 개행(\r\n)의 \r 문자 무시 로직.
+		if (mapCharacter == '\r') continue;
+
 		if (mapCharacter == '\n')
 		{
-			//std::cout << "\n";
-			// y좌표는 하나 늘리고, x 좌표 초기화.
+			// 개행 시 현재까지의 x값 중 최대치를 width로 갱신
+			if (position.x > mapWidth) mapWidth = (int)position.x;
+
 			++position.y;
 			position.x = 0;
 			continue;
 		}
 
-	
 		// 한문자씩 처리.
 		switch (mapCharacter)
 		{
 		case '#':
-			//std::cout << "#" Wall(밀 수도 파괴할 수도 없는 벽)
 			AddNewActor(new Wall(position));
 			break;
-
 		case 'o':
-			//std::cout << " " Ground(움직일 수 있는 땅)
 			AddNewActor(new Ground(position));
 			break;
-
 		case 'P':
-			//std::cout << "P" Player(움직이고 물풍선을 놓는 플레이어)
-			// 플레이어도 이동 가능함.
-			// 플레이어 밑에 땅이 있어야 함.
 			AddNewActor(player = new Player(position));
 			playerStartPosition = position;
 			AddNewActor(new Ground(position));
 			break;
-
 		case 'L':
-			//std::cout << "=" LightBox(밀 수도 있고 파괴도 가능한 박스)
-			// 박스는 이동 가능함.
-			// 박스가 옮겨졌을 때 그 밑에 땅이 있어야 함.
 			AddNewActor(new LightBox(position));
 			AddNewActor(new Ground(position));
 			break;
-
 		case 'H':
-			//std::cout << "X" HeavyBox(밀 수 없으나 파괴는 가능한 박스)
 			AddNewActor(new HeavyBox(position));
 			AddNewActor(new Ground(position));
 			break;
-
 		case 'M':
-			// 플레이어가 일정 거리에 들어오면 추적하고 아닐경우 순찰하는 몬스터.
 			AddNewActor(new Monster(position));
 			AddNewActor(new Ground(position));
 			break;
-
 		case '*':
-			// 충돌범위 9칸을 가지고 체력이 많은 보스 몬스터.
 			AddNewActor(new Boss(position));
 			AddNewActor(new Ground(position));
 			break;
-
 		case 'F':
-			// 물풍선 폭발 범위를 상하좌우 한칸씩 늘려주는 아이템.
 			AddNewActor(new Item(position, 1));
 			AddNewActor(new Ground(position));
 			break;
-
 		case 'B':
-			// BubbleLimit을 증가시켜 주는 아이템.
 			AddNewActor(new Item(position, 2));
 			AddNewActor(new Ground(position));
 			break;
-
 		case 'K':
-			// KickShoes 아이템 플레이어가 먹고 나면 물풍선을 차서 이동 시킴.
 			AddNewActor(new Item(position, 3));
 			AddNewActor(new Ground(position));
 			break;
-
 		case 'D':
 			AddNewActor(new Drone(position));
 			AddNewActor(new Ground(position));
 			break;
+		default:
+			// 정의되지 않은 문자는 x 좌표 증가에서 제외하거나 건너뜀.
+			continue;
 		}
 
-		// 맵파일로 추가되는 액터 외에 박스 파괴시 드랍되는 아이템이나 몬스터 액터도 있음
-		// Monster(M)    Balloon(B) Flask(F)   Skate(S) KickShoes(K)
-		// x 좌표 증가 처리.
 		++position.x;
+
 	}
 
-	// 사용한 버퍼 해제.
-	delete[] data;
+	// 모든 맵 파싱이 끝난 후 확정된 크기로 맵 배열 초기화.
+	InitCanMoveMapAndDangerMap();
 
-	// 파일이 정상적으로 열렸으면 닫기.
+	delete[] data;
 	fclose(file);
 }
 
@@ -609,7 +580,7 @@ void GameLevel::EnemyAllKill()
 
 void GameLevel::AddDanger(Vector2 pos, int value) 
 {
-	if (pos.x >= 0 && pos.x < 20 && pos.y >= 0 && pos.y < 20) 
+	if (pos.x >= 0 && pos.x < 19 && pos.y >= 0 && pos.y < 17) 
 	{
 		dangerMap[pos.y][pos.x] += value;
 	}
@@ -621,11 +592,9 @@ int GameLevel::GetDangerValue(Vector2 pos)
 	return dangerMap[pos.y][pos.x];
 }
 
-void GameLevel::InitCanMoveMap()
+void GameLevel::InitCanMoveMapAndDangerMap()
 {
-	// 1. 가로, 세로 크기 설정.
-	const int mapWidth = 20;
-	const int mapHeight = 20;
+
 
 	// 2. 2차원 벡터를 0으로 초기화하며 할당
 	// std::vector<T>(개수, 초기값) 문법
@@ -635,6 +604,10 @@ void GameLevel::InitCanMoveMap()
 		std::vector<int>(mapWidth, 0)
 	);
 
+	dangerMap = std::vector<std::vector<int>>(
+		mapHeight,
+		std::vector<int>(mapWidth, 0)
+	);
 }
 
 void GameLevel::UpdateCanMoveMap()
