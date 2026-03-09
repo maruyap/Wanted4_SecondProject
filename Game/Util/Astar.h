@@ -30,6 +30,8 @@ public:
 	AStar();
 	~AStar();
 
+	bool isDebuged = false;
+
 	// 객체 지향 이론에서 -> 메시지(Message) - 공개 멤버 함수(인터페이스).
 	// 경로 검색(탐색) 함수.
 	// startNode: 시작 지점.

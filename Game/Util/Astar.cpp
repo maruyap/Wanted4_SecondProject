@@ -5,6 +5,9 @@
 #include <Windows.h>
 #include <iostream>
 #include <set>
+#include <Render/Renderer.h>
+#include <Level/GameLevel.h>
+using namespace Wanted;
 AStar::AStar()
 {
 }
@@ -155,6 +158,10 @@ std::vector<Vector2> AStar::FindPath(
 	std::vector<std::vector<int>>& grid,
 	std::vector<std::vector<int>>& dangerMap)
 {
+	if (grid[goalPos.y][goalPos.x] == 1)
+	{
+		return {};
+	}
 	// 이전 탐색 데이터 및 메모리 완전 정리.
 	ClearLists();
 
@@ -170,7 +177,7 @@ std::vector<Vector2> AStar::FindPath(
 	// 시작 노드 설정.
 	openList.emplace_back(this->startNode);
 
-	// [수정] 이동 비용 단위를 10으로 설정.
+	// 이동 비용 단위를 10으로 설정.
 	std::vector<Direction> directions =
 	{
 		{ -1, 0, 10 },  { 1, 0, 10 },{ 0, -1, 10 }, { 0, 1, 10 }
@@ -186,12 +193,73 @@ std::vector<Vector2> AStar::FindPath(
 			{
 				currentNode = node;
 			}
+			// fCost가 같다면 목표에 더 가까운(hCost가 낮은) 노드를 선택
+			else if (node->fCost == currentNode->fCost)
+			{
+				if (node->hCost < currentNode->hCost)
+				{
+					currentNode = node;
+				}
+			}
+		}
+
+		if (isDebuged)
+		{
+			GameLevel::gameLevelInstance->Draw();
+			
+
+			// 현재까지 탐색된 모든 열린 리스트와 닫힌 리스트 시각화
+		
+			for (Node* node : allNodes)
+			{
+				// 이미 탐색 중인 노드는 '+' 기호로 표시
+				Renderer::Get().Submit("+", node->vector2, Color::Green, 100);
+			}
+			// 현재 검사 중인 노드는 특별한 색으로 강조
+			Renderer::Get().Submit("@", currentNode->vector2, Color::Red, 101);
+			
+			// 더블 버퍼링 강제 출력 (이게 호출되어야 화면에 나타남)
+			Renderer::Get().Draw();
+
+
+			// 시각화를 위해 잠깐 멈추기
+			DWORD delay = static_cast<DWORD>(0.1f * 1000);
+			Sleep(delay);
 		}
 
 		// 목적지 도착 확인.
 		if (IsDestination(currentNode))
 		{
-			return ConstructPath(currentNode);
+			std::vector<Vector2> path = ConstructPath(currentNode);
+
+			if (this->isDebuged)
+			{
+				// 최종 경로를 하나씩 그리는 루프
+				for (const auto& pos : path)
+				{
+					// 배경(액터들)을 새로 그려서 이전 탐색 흔적(+) 지우기.
+					if (GameLevel::gameLevelInstance) {
+						GameLevel::gameLevelInstance->Draw();
+					}
+
+					// 그 위에 최종 경로만 올리기(우선순위를 높게 설정)
+					// (이미 지나온 경로들도 함께 보여주려면 path의 현재 인덱스까지 루프를 돌며 Submit해야함)
+					for (const auto& p : path) {
+						if (p == pos) break; // 현재 그리는 지점까지만 표시
+						Renderer::Get().Submit("*", p, Color::White, 102);
+					}
+					Renderer::Get().Submit("*", pos, Color::White, 102);
+
+					// 화면에 출력
+					Renderer::Get().Draw();
+
+					// 연출 속도 조절
+					Sleep(80);
+				}
+
+				this->isDebuged = false; // 연출 종료
+			}
+			return path;
 		}
 
 		// 열린 리스트에서 현재 노드 제거.

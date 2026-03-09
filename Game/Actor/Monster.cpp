@@ -53,35 +53,93 @@ Monster::~Monster()
 //}
 
 // 비교를 위한 순찰 제거 에이스타 추적버전Tick
+//void Monster::Tick(float deltaTime)
+//{
+//    if (DestroyRequested()) return;
+//
+//    moveTimer.Tick(deltaTime);
+//
+//    // 타이머가 도달했을 경우에만 경로계산 및 움직임.
+//    if (moveTimer.IsTimeOut())
+//    {
+//        GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
+//        if (!gameLevel) return;
+//
+//        state = MonsterState::Chase;
+//        Vector2 playerPos = gameLevel->GetPlayerPosition();
+//        targetPosition = playerPos;
+//
+//        // 길찾기 수행 (0.5초마다 현재 상황에 맞는 최적의 경로 갱신)
+//        UpdatePath(targetPosition);
+//
+//        // 2. 이동 실행 (0.5초에 딱 한 번만 한 칸 움직임)
+//        if (!path.empty() && pathIndex < (int)path.size())
+//        {
+//            Movement();
+//        }
+//        else
+//        {
+//            // 경로가 없으면 순찰 로직 실행.
+//            PatrolMove(*gameLevel);
+//            SetPosition(GetPosition() + direction);
+//        }
+//
+//        moveTimer.Reset();
+//    }
+//}
+
 void Monster::Tick(float deltaTime)
 {
     if (DestroyRequested()) return;
 
+    GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
+    if (!gameLevel) return;
+
+    AStar* astar = gameLevel->GetAStar();
+    if (!astar) return;
+
+    // 디버그 모드(시각화) 중일 때의 처리
+    if (astar->isDebuged)
+    {
+        // 플레이어 위치로 길찾기 실행 (AStar 내부에서 Sleep과 Draw로 애니메이션 출력)
+        // 이 함수가 실행되는 동안은 Sleep 때문에 게임의 다른 Tick들은 멈추게 됨
+        this->path = astar->FindPath(
+            GetPosition(),
+            gameLevel->GetPlayerPosition(),
+            gameLevel->canMoveMap,
+            gameLevel->dangerMap
+        );
+
+        // 탐색이 끝났으므로 디버그 모드 자동 종료
+        astar->isDebuged = false;
+
+        // 3. 타이머를 리셋하여 탐색 직후 바로 움직이지 않게 약간의 여유를 줌
+        moveTimer.Reset();
+
+        return; // 이번 프레임은 탐색만 하고 종료
+    }
+
+    // --- [일반 모드] 평소처럼 플레이어를 쫓아가는 로직 ---
     moveTimer.Tick(deltaTime);
 
-    // 타이머가 도달했을 경우에만 경로계산 및 움직임.
     if (moveTimer.IsTimeOut())
     {
-        GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
-        if (!gameLevel) return;
+        // 평소에도 주기적으로 길을 갱신해야 플레이어를 계속 쫓아감
+        // 이때는 astar->isDebuged가 false이므로 Sleep 없이 순식간에 계산됨
+        this->path = astar->FindPath(
+            GetPosition(),
+            gameLevel->GetPlayerPosition(),
+            gameLevel->canMoveMap,
+            gameLevel->dangerMap
+        );
 
-        state = MonsterState::Chase;
-        Vector2 playerPos = gameLevel->GetPlayerPosition();
-        targetPosition = playerPos;
-
-        // 길찾기 수행 (0.5초마다 현재 상황에 맞는 최적의 경로 갱신)
-        UpdatePath(targetPosition);
-
-        // 2. 이동 실행 (0.5초에 딱 한 번만 한 칸 움직임)
-        if (!path.empty() && pathIndex < (int)path.size())
+        // 경로가 있다면 이동 실행
+        if (!path.empty())
         {
-            Movement();
-        }
-        else
-        {
-            // 경로가 없으면 순찰 로직 실행.
-            PatrolMove(*gameLevel);
-            SetPosition(GetPosition() + direction);
+            // path[0]은 현재 위치이므로 path[1]로 이동하거나 
+            // 리스트의 앞에서 하나씩 꺼내서 이동하는 로직을 구현
+            Vector2 nextTarget = path[1];
+            SetPosition(nextTarget);
         }
 
         moveTimer.Reset();

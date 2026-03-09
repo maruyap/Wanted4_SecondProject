@@ -396,6 +396,14 @@ void GameLevel::Tick(float deltatime)
 {
 	Level::Tick(deltatime);
 
+	if (Input::Get().GetKeyDown(VK_F1))
+	{
+		if (astar)
+		{
+			astar->isDebuged = !astar->isDebuged; // bool 뒤집기 토글 로직
+		}
+	}
+
 	if (Input::Get().GetKeyDown(VK_ESCAPE))
 	{
 		Game::Get().ToggleMenu();
