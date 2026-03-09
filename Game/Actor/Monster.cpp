@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <queue>
 #include <iostream>
-
+#include <Actor/Player.h>
 Monster::Monster(const Vector2& Position)
 	: super("M", Position, Color::Red)
 {
@@ -93,59 +93,70 @@ void Monster::Tick(float deltaTime)
     if (DestroyRequested()) return;
 
     GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
-    if (!gameLevel) return;
+    if (!gameLevel || !gameLevel->GetAStar()) return;
 
     AStar* astar = gameLevel->GetAStar();
-    if (!astar) return;
 
-    // 디버그 모드(시각화) 중일 때의 처리
-    if (astar->isDebuged)
+    // 플레이어 생존 확인.
+    bool canChase = (gameLevel->player && !gameLevel->player->DestroyRequested());
+
+    // 디버그 시각화 (추격 가능할 때만).
+    if (astar->isVisualizing && canChase)
     {
-        // 플레이어 위치로 길찾기 실행 (AStar 내부에서 Sleep과 Draw로 애니메이션 출력)
-        // 이 함수가 실행되는 동안은 Sleep 때문에 게임의 다른 Tick들은 멈추게 됨
-        this->path = astar->FindPath(
-            GetPosition(),
-            gameLevel->GetPlayerPosition(),
-            gameLevel->canMoveMap,
-            gameLevel->dangerMap
-        );
-
-        // 탐색이 끝났으므로 디버그 모드 자동 종료
-        astar->isDebuged = false;
-
-        // 3. 타이머를 리셋하여 탐색 직후 바로 움직이지 않게 약간의 여유를 줌
+        UpdatePath(gameLevel->player->GetPosition());
+        astar->isVisualizing = false;
         moveTimer.Reset();
-
-        return; // 이번 프레임은 탐색만 하고 종료
+        return;
     }
 
-    // --- [일반 모드] 평소처럼 플레이어를 쫓아가는 로직 ---
     moveTimer.Tick(deltaTime);
+    if (!moveTimer.IsTimeOut()) return;
 
-    if (moveTimer.IsTimeOut())
+    // 목적지 결정 (한칸 이동마다).
+    Vector2 currentPos = GetPosition();
+    Vector2 nextPos = currentPos; // 일단 현재 위치로 초기화.
+
+    if (canChase)
     {
-        // 평소에도 주기적으로 길을 갱신해야 플레이어를 계속 쫓아감
-        // 이때는 astar->isDebuged가 false이므로 Sleep 없이 순식간에 계산됨
-        this->path = astar->FindPath(
-            GetPosition(),
-            gameLevel->GetPlayerPosition(),
-            gameLevel->canMoveMap,
-            gameLevel->dangerMap
-        );
+        state = MonsterState::Chase;
+        UpdatePath(gameLevel->player->GetPosition()); // 경로 갱신.
 
-        // 경로가 있다면 이동 실행
+        // UpdatePath에서 첫 칸을 지웠으므로 path[0]이 다음 목적지.
         if (!path.empty())
         {
-            // path[0]은 현재 위치이므로 path[1]로 이동하거나 
-            // 리스트의 앞에서 하나씩 꺼내서 이동하는 로직을 구현
-            Vector2 nextTarget = path[1];
-            SetPosition(nextTarget);
+            nextPos = path[0];
         }
-
-        moveTimer.Reset();
+        else
+        {
+            canChase = false; // 갈 수 있는 경로가 없다면 순찰로 넘김.
+        }
     }
-}
 
+    if (!canChase)
+    {
+        state = MonsterState::Patrol;
+        path.clear();
+        PatrolMove(*gameLevel); // 방향 결정.
+        nextPos = currentPos + direction;
+    }
+
+    // 계산된 nextPos가 유효한 범위 안이고, 벽(1)이 아닐 때만 이동.
+    if (nextPos.y >= 0 && nextPos.y < (int)gameLevel->canMoveMap.size() &&
+        nextPos.x >= 0 && nextPos.x < (int)gameLevel->canMoveMap[0].size())
+    {
+        if (gameLevel->canMoveMap[(int)nextPos.y][(int)nextPos.x] != 1)
+        {
+            SetPosition(nextPos);
+        }
+        else
+        {
+            // 만약 계산된 위치가 벽이라면, 이동하지 않고 경로 비우기.
+            path.clear();
+        }
+    }
+
+    moveTimer.Reset();
+}
 void Monster::BeginPlay()
 {
     GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
@@ -331,10 +342,6 @@ void Monster::UpdatePath(Vector2 dest)
     {
         this->path.erase(this->path.begin());
     }
-
-    // 인덱스 초기화
-    // 첫 칸을 지웠으니 path[0]은 몬스터가 가야할 다음 칸.
-    this->pathIndex = 0;
 }
 
 void Monster::PatrolMove(GameLevel& level)

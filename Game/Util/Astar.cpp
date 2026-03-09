@@ -193,7 +193,7 @@ std::vector<Vector2> AStar::FindPath(
 			{
 				currentNode = node;
 			}
-			// fCost가 같다면 목표에 더 가까운(hCost가 낮은) 노드를 선택
+			// fCost가 같다면 목표에 더 가까운(hCost가 낮은) 노드를 선택.
 			else if (node->fCost == currentNode->fCost)
 			{
 				if (node->hCost < currentNode->hCost)
@@ -203,26 +203,26 @@ std::vector<Vector2> AStar::FindPath(
 			}
 		}
 
-		if (isDebuged)
+		if (isVisualizing)
 		{
 			GameLevel::gameLevelInstance->Draw();
 			
 
-			// 현재까지 탐색된 모든 열린 리스트와 닫힌 리스트 시각화
+			// 현재까지 탐색된 모든 열린 리스트와 닫힌 리스트 시각화.
 		
 			for (Node* node : allNodes)
 			{
-				// 이미 탐색 중인 노드는 '+' 기호로 표시
+				// 이미 탐색 중인 노드는 '+' 기호로 표시.
 				Renderer::Get().Submit("+", node->vector2, Color::Green, 100);
 			}
-			// 현재 검사 중인 노드는 특별한 색으로 강조
+			// 현재 검사 중인 노드는 특별한 색으로 강조.
 			Renderer::Get().Submit("@", currentNode->vector2, Color::Red, 101);
 			
-			// 더블 버퍼링 강제 출력 (이게 호출되어야 화면에 나타남)
+			// 더블 버퍼링 강제 출력 (이게 호출되어야 화면에 나타남).
 			Renderer::Get().Draw();
 
 
-			// 시각화를 위해 잠깐 멈추기
+			// 시각화를 위해 잠깐 멈추기.
 			DWORD delay = static_cast<DWORD>(0.1f * 1000);
 			Sleep(delay);
 		}
@@ -232,9 +232,9 @@ std::vector<Vector2> AStar::FindPath(
 		{
 			std::vector<Vector2> path = ConstructPath(currentNode);
 
-			if (this->isDebuged)
+			if (this->isVisualizing)
 			{
-				// 최종 경로를 하나씩 그리는 루프
+				// 최종 경로를 하나씩 그리는 루프.
 				for (const auto& pos : path)
 				{
 					// 배경(액터들)을 새로 그려서 이전 탐색 흔적(+) 지우기.
@@ -242,22 +242,22 @@ std::vector<Vector2> AStar::FindPath(
 						GameLevel::gameLevelInstance->Draw();
 					}
 
-					// 그 위에 최종 경로만 올리기(우선순위를 높게 설정)
+					// 그 위에 최종 경로만 올리기(우선순위를 높게 설정).
 					// (이미 지나온 경로들도 함께 보여주려면 path의 현재 인덱스까지 루프를 돌며 Submit해야함)
 					for (const auto& p : path) {
-						if (p == pos) break; // 현재 그리는 지점까지만 표시
+						if (p == pos) break; // 현재 그리는 지점까지만 표시.
 						Renderer::Get().Submit("*", p, Color::White, 102);
 					}
 					Renderer::Get().Submit("*", pos, Color::White, 102);
 
-					// 화면에 출력
+					// 화면에 출력.
 					Renderer::Get().Draw();
 
-					// 연출 속도 조절
+					// 연출 속도 조절.
 					Sleep(80);
 				}
 
-				this->isDebuged = false; // 연출 종료
+				this->isVisualizing = false; // 연출 종료.
 			}
 			return path;
 		}
@@ -329,10 +329,7 @@ std::vector<Vector2> AStar::FindPath(
 			neighborNode->hCost = CalculateHeuristic(neighborNode, this->goalNode);
 			neighborNode->fCost = neighborNode->gCost + neighborNode->hCost;
 
-			if (grid[newY][newX] == 0)
-			{
-				grid[newY][newX] = 5; // 탐색 시각화.
-			}
+		
 
 			openList.emplace_back(neighborNode);
 		}

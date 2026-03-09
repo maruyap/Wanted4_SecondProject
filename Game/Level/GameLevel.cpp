@@ -400,7 +400,7 @@ void GameLevel::Tick(float deltatime)
 	{
 		if (astar)
 		{
-			astar->isDebuged = !astar->isDebuged; // bool 뒤집기 토글 로직
+			astar->isVisualizing = !astar->isVisualizing; // bool 뒤집기 토글 로직
 		}
 	}
 
@@ -431,6 +431,14 @@ void GameLevel::Tick(float deltatime)
 			this->player = newPlayer;
 			--playerLifeCount;
 			AddNewActor(newPlayer);
+			for (auto& actor : actors)
+			{
+				if (actor->IsTypeOf<Monster>())
+				{
+					Monster* monster = dynamic_cast<Monster*>(actor);
+					monster->path.clear();
+				}
+			}
 		}
 	}
 

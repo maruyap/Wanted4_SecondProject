@@ -29,13 +29,13 @@ public:
 
 	void UpdatePath(Vector2 dest); // AStar용 경로 저장.
 	void PatrolMove(GameLevel& level);
-
+	std::vector<Vector2> path; // 찾은 경로 좌표들.
 private:
 	Timer moveTimer{ 0.5f };
 	Vector2 direction = { 1, 0 };
 
 	AStar* astar = nullptr; // 게임 레벨의 Astar를 받아올 Astar 포인터.
-	std::vector<Vector2> path; // 찾은 경로 좌표들.
+	
 	int pathIndex = 0;       // 현재 따라가는 경로 위치.
 	Vector2 targetPosition{ -1, -1 }; // 현재 추격중인 타겟 위치.
 	MonsterState state = MonsterState::Patrol;
