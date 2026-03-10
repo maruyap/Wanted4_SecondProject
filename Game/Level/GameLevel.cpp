@@ -396,7 +396,6 @@ void GameLevel::Tick(float deltatime)
 {
 	Level::Tick(deltatime);
 
-\
 	if (Input::Get().GetKeyDown(VK_F1))
 	{
 		if (astar)
@@ -475,12 +474,7 @@ void GameLevel::Tick(float deltatime)
 		SpawnBubble();
 
 	CollisionPlayerAndOther();
-
-	
 }
-
-
-
 
 void GameLevel::SpawnItem(const Vector2& position, int itemType)
 {
@@ -506,8 +500,6 @@ void GameLevel::SpawnBubble(void)
 	}
 	
 }
-
-
 
 bool GameLevel::CanMonsterOrBubbleMove(const Vector2& nextPosition)
 {
@@ -629,7 +621,7 @@ void GameLevel::AddDanger(Vector2 pos, int value)
 	}
 }
 
-// 현재 칸이 위험한지 확인하는 함수 (에이스타가 호출)
+// 현재 칸이 위험한지 확인하는 함수 (에이스타가 호출).
 int GameLevel::GetDangerValue(Vector2 pos)
 {
 	return dangerMap[pos.y][pos.x];
@@ -639,8 +631,8 @@ void GameLevel::InitCanMoveMapAndDangerMap()
 {
 
 
-	// 2. 2차원 벡터를 0으로 초기화하며 할당
-	// std::vector<T>(개수, 초기값) 문법
+	// 2차원 벡터를 0으로 초기화하며 할당.
+	// std::vector<T>(개수, 초기값) 문법.
 	// 외부 벡터는 행(Height)의 개수만큼, 내부 벡터는 열(Width)의 개수만큼 생성.
 	canMoveMap = std::vector<std::vector<int>>(
 		mapHeight,
@@ -655,9 +647,9 @@ void GameLevel::InitCanMoveMapAndDangerMap()
 
 void GameLevel::UpdateCanMoveMap()
 {
-	for (int y = 0; y < mapHeight; ++y) // MAP_HEIGHT는 맵의 세로 크기
+	for (int y = 0; y < mapHeight; ++y) 
 	{
-		for (int x = 0; x < mapWidth; ++x) // MAP_WIDTH는 맵의 가로 크기
+		for (int x = 0; x < mapWidth; ++x) 
 		{
 			canMoveMap[y][x] = 0;
 		}
@@ -672,5 +664,3 @@ void GameLevel::UpdateCanMoveMap()
 		}
 	}
 }
-
-

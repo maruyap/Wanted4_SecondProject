@@ -16,6 +16,8 @@ Monster::~Monster()
     
 }
 
+// Tick만 수정하면 됨.(BFS랑 에이스타)
+
 // 기존BFS추적과 에이스타추적의 시각화 비교목적을 위한 버전.(BFS추적)
 //void Monster::Tick(float deltaTime)
 //{
@@ -133,7 +135,6 @@ void Monster::Tick(float deltaTime)
     }
 }
 
-
 // 비교를 위한 순찰 제거 에이스타 추적버전Tick
 //void Monster::Tick(float deltaTime)
 //{
@@ -169,8 +170,6 @@ void Monster::Tick(float deltaTime)
 //        moveTimer.Reset();
 //    }
 //}
-
-
 
 void Monster::BeginPlay()
 {
@@ -251,7 +250,6 @@ void Monster::Movement()
     }
 
 }
-
 
 // 밑에꺼 에이스타 추적버전
 //void Monster::Movement()

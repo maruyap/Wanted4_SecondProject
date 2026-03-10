@@ -58,16 +58,16 @@ void Drone::TestBubbleTrigger(float deltaTime)
     GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
     if (!gameLevel || TriggerCount >= 1) return;
 
-    // 1. 시간 누적 (예: 5초마다 한 번씩 실행)
+    // 시간 누적 (예: 5초마다 한 번씩 실행).
     triggerTimer += deltaTime;
 
-    // 5초가 지났을 때 실행
+    // 5초가 지났을 때 실행.
     if (triggerTimer >= 7.0f)
     {
         int startX = 6;
         int startY[] = { 7, 8, 9, 10, 11 };
 
-        // 2. 물풍선 일괄 생성 및 위험 지역 강제 갱신
+        // 물풍선 일괄 생성 및 위험 지역 강제 갱신.
         for (int yPos : startY)
         {
             Vector2 testPos(startX, yPos);
@@ -77,9 +77,7 @@ void Drone::TestBubbleTrigger(float deltaTime)
             
         }
 
-        
-
-        triggerTimer = 0.0f; // 타이머 초기화
+        triggerTimer = 0.0f; // 타이머 초기화.
         ++TriggerCount;
     }
 }

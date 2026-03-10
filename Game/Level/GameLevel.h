@@ -39,18 +39,18 @@ public:
 	void NextStage();
 	void EnemyAllKill();
 
-	void DrawUI(); // 플레이어 UI 띄워주는 함수
+	void DrawUI(); // 플레이어 UI 띄워주는 함수.
 
 	void AddDanger(Vector2 pos, int value);
 
-	int GetDangerValue(Vector2 pos); // Astar의 물풍선가중치를 위해 호출예정
+	int GetDangerValue(Vector2 pos); // Astar의 물풍선가중치를 위해 호출예정.
 	Player* player = nullptr;
 
 	void InitCanMoveMapAndDangerMap();
 
 	void UpdateCanMoveMap();
 
-	std::vector<std::vector<int>> canMoveMap; // 0이 이동가능 1이 이동불가(ex 벽, 무거운박스등)
+	std::vector<std::vector<int>> canMoveMap; // 0이 이동가능 1이 이동불가(ex 벽, 무거운박스등).
 	std::vector<std::vector<int>> dangerMap;
 	AStar* GetAStar() const { return astar; } // Astar을 활용할 객체가 받아서 사용.
 private:
