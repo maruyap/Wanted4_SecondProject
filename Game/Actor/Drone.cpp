@@ -18,7 +18,7 @@ Drone::Drone(const Wanted::Vector2& position)
 void Drone::Tick(float deltaTime)
 {
 	super::Tick(deltaTime);
-	//TestBubbleTrigger(deltaTime);
+	TestBubbleTrigger(deltaTime);
 	if (Input::Get().GetKeyDown('E'))
 	{
 		GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
@@ -56,13 +56,13 @@ void Drone::TestBubbleTrigger(float deltaTime)
     static int TriggerCount = 0;
 
     GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
-    if (!gameLevel || TriggerCount >= 1) return;
+    if (!gameLevel || TriggerCount >= 2) return;
 
-    // 시간 누적 (예: 5초마다 한 번씩 실행).
+    // 시간 누적 (예: 7초마다 한 번씩 실행).
     triggerTimer += deltaTime;
 
-    // 5초가 지났을 때 실행.
-    if (triggerTimer >= 7.0f)
+    // 7초가 지났을 때 실행.
+    if (triggerTimer >= 6.5f)
     {
         int startX = 6;
         int startY[] = { 7, 8, 9, 10, 11 };
