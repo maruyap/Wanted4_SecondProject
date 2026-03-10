@@ -16,7 +16,7 @@ Monster::~Monster()
     
 }
 
-// 기존BFS추적과 에이스타추적의 시각화 비교목적을 위한 버전.
+// 기존BFS추적과 에이스타추적의 시각화 비교목적을 위한 버전.(BFS추적)
 //void Monster::Tick(float deltaTime)
 //{
 //    moveTimer.Tick(deltaTime);
@@ -49,45 +49,16 @@ Monster::~Monster()
 //        }
 //
 //        moveTimer.Reset();
+//
+//        if (gameLevel->player != nullptr)
+//        { 
+//            chasePlayerMoveCount++;
+//        }
 //    }
+//   
 //}
 
-// 비교를 위한 순찰 제거 에이스타 추적버전Tick
-//void Monster::Tick(float deltaTime)
-//{
-//    if (DestroyRequested()) return;
-//
-//    moveTimer.Tick(deltaTime);
-//
-//    // 타이머가 도달했을 경우에만 경로계산 및 움직임.
-//    if (moveTimer.IsTimeOut())
-//    {
-//        GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
-//        if (!gameLevel) return;
-//
-//        state = MonsterState::Chase;
-//        Vector2 playerPos = gameLevel->GetPlayerPosition();
-//        targetPosition = playerPos;
-//
-//        // 길찾기 수행 (0.5초마다 현재 상황에 맞는 최적의 경로 갱신)
-//        UpdatePath(targetPosition);
-//
-//        // 2. 이동 실행 (0.5초에 딱 한 번만 한 칸 움직임)
-//        if (!path.empty() && pathIndex < (int)path.size())
-//        {
-//            Movement();
-//        }
-//        else
-//        {
-//            // 경로가 없으면 순찰 로직 실행.
-//            PatrolMove(*gameLevel);
-//            SetPosition(GetPosition() + direction);
-//        }
-//
-//        moveTimer.Reset();
-//    }
-//}
-
+//밑에꺼 에이스타 시각화 완료된 버전
 void Monster::Tick(float deltaTime)
 {
     if (DestroyRequested()) return;
@@ -156,7 +127,51 @@ void Monster::Tick(float deltaTime)
     }
 
     moveTimer.Reset();
+    if (gameLevel->player != nullptr)
+    {
+        chasePlayerMoveCount++;
+    }
 }
+
+
+// 비교를 위한 순찰 제거 에이스타 추적버전Tick
+//void Monster::Tick(float deltaTime)
+//{
+//    if (DestroyRequested()) return;
+//
+//    moveTimer.Tick(deltaTime);
+//
+//    // 타이머가 도달했을 경우에만 경로계산 및 움직임.
+//    if (moveTimer.IsTimeOut())
+//    {
+//        GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
+//        if (!gameLevel) return;
+//
+//        state = MonsterState::Chase;
+//        Vector2 playerPos = gameLevel->GetPlayerPosition();
+//        targetPosition = playerPos;
+//
+//        // 길찾기 수행 (0.5초마다 현재 상황에 맞는 최적의 경로 갱신)
+//        UpdatePath(targetPosition);
+//
+//        // 2. 이동 실행 (0.5초에 딱 한 번만 한 칸 움직임)
+//        if (!path.empty() && pathIndex < (int)path.size())
+//        {
+//            Movement();
+//        }
+//        else
+//        {
+//            // 경로가 없으면 순찰 로직 실행.
+//            PatrolMove(*gameLevel);
+//            SetPosition(GetPosition() + direction);
+//        }
+//
+//        moveTimer.Reset();
+//    }
+//}
+
+
+
 void Monster::BeginPlay()
 {
     GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
@@ -216,49 +231,49 @@ void Monster::BeginPlay()
 //}
 
 // 밑에꺼 순찰모드 뺀 BFS추적버전
-//void Monster::Movement()
-//{
-//    // 이동 가능 여부만 판단.
-//    if (path.empty() || pathIndex >= (int)path.size()) return;
-//
-//    Vector2 nextPosition = path[pathIndex];
-//    GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
-//
-//    if (gameLevel && gameLevel->CanMonsterOrBubbleMove(nextPosition)) 
-//    {
-//        SetPosition(nextPosition);
-//        pathIndex++;
-//    }
-//    else 
-//    {
-//        // 길이 막혔을 때만 재탐색.
-//        FindPath(targetPosition);
-//    }
-//
-//}
-
-
-// 밑에꺼 에이스타 추적버전
 void Monster::Movement()
 {
-    // 경로 끝에 도달했으면 종료.
+    // 이동 가능 여부만 판단.
     if (path.empty() || pathIndex >= (int)path.size()) return;
 
     Vector2 nextPosition = path[pathIndex];
     GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
 
-    // 다음 칸이 여전히 이동 가능한 상태인지 최종 체크.
-    if (gameLevel && gameLevel->CanMonsterOrBubbleMove(nextPosition))
+    if (gameLevel && gameLevel->CanMonsterOrBubbleMove(nextPosition)) 
     {
         SetPosition(nextPosition);
-        pathIndex++; // 성공적으로 이동했으므로 다음 목표 지점으로 인덱스 증가.
+        pathIndex++;
     }
-    else
+    else 
     {
-        // 길이 막혔다면 다음 타이머를 기다리지 않고 즉시 재탐색 유도.
-        UpdatePath(targetPosition);
+        // 길이 막혔을 때만 재탐색.
+        FindPath(targetPosition);
     }
+
 }
+
+
+// 밑에꺼 에이스타 추적버전
+//void Monster::Movement()
+//{
+//    // 경로 끝에 도달했으면 종료.
+//    if (path.empty() || pathIndex >= (int)path.size()) return;
+//
+//    Vector2 nextPosition = path[pathIndex];
+//    GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());
+//
+//    // 다음 칸이 여전히 이동 가능한 상태인지 최종 체크.
+//    if (gameLevel && gameLevel->CanMonsterOrBubbleMove(nextPosition))
+//    {
+//        SetPosition(nextPosition);
+//        pathIndex++; // 성공적으로 이동했으므로 다음 목표 지점으로 인덱스 증가.
+//    }
+//    else
+//    {
+//        // 길이 막혔다면 다음 타이머를 기다리지 않고 즉시 재탐색 유도.
+//        UpdatePath(targetPosition);
+//    }
+//}
 
 void Monster::FindPath(Vector2 dest)
 {

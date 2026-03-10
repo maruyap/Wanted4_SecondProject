@@ -12,5 +12,6 @@ class Drone : public Actor
 public:
 	Drone(const Wanted::Vector2& position);
 	virtual void Tick(float deltaTime) override;
+	void TestBubbleTrigger(float deltaTime);
 };
 

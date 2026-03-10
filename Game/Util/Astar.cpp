@@ -287,9 +287,9 @@ std::vector<Vector2> AStar::FindPath(
 				continue;
 			}
 
-			// 위험 지역(dangerMap == 1)일 경우 가중치(70)를 더함.
-			// 이동 비용 단위가 10이므로, 70을 더하면 약 7칸을 돌아가는 것과 같은 비용이 됨.
-			int weight = (dangerMap[newY][newX] == 1) ? 70 : 0;
+			// 위험 지역(dangerMap == 1)일 경우 가중치(200)를 더함.
+			// 이동 비용 단위가 10이므로, 200을 더하면 약 20칸을 돌아가는 것과 같은 비용이 됨.
+			int weight = (dangerMap[newY][newX] == 1) ? 200 : 0;
 			int newGCost = currentNode->gCost + direction.cost + weight;
 
 			// 이미 방문했는지 확인.

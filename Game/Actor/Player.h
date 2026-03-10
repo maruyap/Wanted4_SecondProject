@@ -21,7 +21,7 @@ public:
 	bool wantSpawnBubble = false;
 	bool canKick = false;
 	int bubbleLimit = 2;
-	int bubbleScope = 3; // 물풍선 위험지역 시각화를 더 뚜렷하게 보기위해
+	int bubbleScope = 4; // 물풍선 위험지역 시각화를 더 뚜렷하게 보기위해
 	//int bubbleScope = 1;
 };
 

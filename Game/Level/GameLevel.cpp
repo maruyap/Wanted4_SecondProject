@@ -396,6 +396,7 @@ void GameLevel::Tick(float deltatime)
 {
 	Level::Tick(deltatime);
 
+\
 	if (Input::Get().GetKeyDown(VK_F1))
 	{
 		if (astar)
@@ -431,13 +432,22 @@ void GameLevel::Tick(float deltatime)
 			this->player = newPlayer;
 			--playerLifeCount;
 			AddNewActor(newPlayer);
+
+			int monsterCount = 0;
+			Monster* targetMonster = nullptr;
 			for (auto& actor : actors)
 			{
 				if (actor->IsTypeOf<Monster>())
 				{
 					Monster* monster = dynamic_cast<Monster*>(actor);
 					monster->path.clear();
+					++monsterCount;
+					targetMonster = static_cast<Monster*>(actor);
 				}
+			}
+			if (monsterCount == 1)
+			{
+				targetMonster->chasePlayerMoveCount = 0;
 			}
 		}
 	}
@@ -455,7 +465,7 @@ void GameLevel::Tick(float deltatime)
 			NextStage();
 		}
 	}
-
+	DrawUI();
 	if (player == nullptr || player->DestroyRequested())
 		return;
 
@@ -466,7 +476,7 @@ void GameLevel::Tick(float deltatime)
 
 	CollisionPlayerAndOther();
 
-	DrawUI();
+	
 }
 
 
@@ -518,11 +528,28 @@ void GameLevel::DrawUI()
 	static char bombBuf[64];
 	static char scopeBuf[64];
 	static char canKickBuf[64];
-
+	static char MonsterChaseCountBuf[64];
 	Renderer& renderer = Renderer::Get();
 
 	sprintf_s(lifeBuf, "LIFE  : %d", playerLifeCount);
 	renderer.Submit(lifeBuf, Vector2(24, 2), Color::Red, 100);
+
+	int monsterCount = 0;
+	Monster* targetMonster = nullptr;
+
+	for (auto& actor : actors)
+	{
+		if (actor->IsTypeOf<Monster>())
+		{
+			++monsterCount;
+			targetMonster = static_cast<Monster*>(actor);
+		}
+	}
+	if (monsterCount == 1 && (targetMonster != nullptr))
+	{
+		sprintf_s(MonsterChaseCountBuf, "CHASE_COUNT : %d", targetMonster->chasePlayerMoveCount);
+		renderer.Submit(MonsterChaseCountBuf, Vector2(20, 7), Color::White, 100);
+	}
 
 	if (player)
 	{
@@ -596,7 +623,7 @@ void GameLevel::EnemyAllKill()
 
 void GameLevel::AddDanger(Vector2 pos, int value) 
 {
-	if (pos.x >= 0 && pos.x < 19 && pos.y >= 0 && pos.y < 17) 
+	if (pos.x >= 0 && pos.x < mapWidth && pos.y >= 0 && pos.y < mapHeight) 
 	{
 		dangerMap[pos.y][pos.x] += value;
 	}
@@ -628,9 +655,9 @@ void GameLevel::InitCanMoveMapAndDangerMap()
 
 void GameLevel::UpdateCanMoveMap()
 {
-	for (int y = 0; y < 17; ++y) // MAP_HEIGHT는 맵의 세로 크기
+	for (int y = 0; y < mapHeight; ++y) // MAP_HEIGHT는 맵의 세로 크기
 	{
-		for (int x = 0; x < 19; ++x) // MAP_WIDTH는 맵의 가로 크기
+		for (int x = 0; x < mapWidth; ++x) // MAP_WIDTH는 맵의 가로 크기
 		{
 			canMoveMap[y][x] = 0;
 		}
@@ -645,3 +672,5 @@ void GameLevel::UpdateCanMoveMap()
 		}
 	}
 }
+
+
