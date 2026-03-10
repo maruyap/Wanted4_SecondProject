@@ -18,7 +18,7 @@ Drone::Drone(const Wanted::Vector2& position)
 void Drone::Tick(float deltaTime)
 {
 	super::Tick(deltaTime);
-	TestBubbleTrigger(deltaTime);
+	//TestBubbleTrigger(deltaTime);
 	if (Input::Get().GetKeyDown('E'))
 	{
 		GameLevel* gameLevel = static_cast<GameLevel*>(GetOwner());

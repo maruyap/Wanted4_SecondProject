@@ -524,7 +524,7 @@ void GameLevel::DrawUI()
 	Renderer& renderer = Renderer::Get();
 
 	sprintf_s(lifeBuf, "LIFE  : %d", playerLifeCount);
-	renderer.Submit(lifeBuf, Vector2(24, 2), Color::Red, 100);
+	renderer.Submit(lifeBuf, Vector2(19, 2), Color::Red, 100);
 
 	int monsterCount = 0;
 	Monster* targetMonster = nullptr;
@@ -540,23 +540,23 @@ void GameLevel::DrawUI()
 	if (monsterCount == 1 && (targetMonster != nullptr))
 	{
 		sprintf_s(MonsterChaseCountBuf, "CHASE_COUNT : %d", targetMonster->chasePlayerMoveCount);
-		renderer.Submit(MonsterChaseCountBuf, Vector2(20, 7), Color::White, 100);
+		renderer.Submit(MonsterChaseCountBuf, Vector2(19, 7), Color::White, 100);
 	}
 
 	if (player)
 	{
 		sprintf_s(bombBuf, "MAX_BOMB  : %d / 8", player->bubbleLimit);
-		renderer.Submit(bombBuf, Vector2(20, 4), Color::White, 100);
+		renderer.Submit(bombBuf, Vector2(19, 4), Color::White, 100);
 
 		sprintf_s(scopeBuf, "MAX_SCOPE : %d / 4", player->bubbleScope);
-		renderer.Submit(scopeBuf, Vector2(20, 5), Color::White, 100);
+		renderer.Submit(scopeBuf, Vector2(19, 5), Color::White, 100);
 
 		const char* kickStatus = player->canKick ? "ON" : "OFF";
 
 		sprintf_s(canKickBuf, "CAN_KICK  : %s", kickStatus);
 
 		Color kickColor = player->canKick ? Color::Green : Color::White;
-		renderer.Submit(canKickBuf, Vector2(20, 6), kickColor, 100);
+		renderer.Submit(canKickBuf, Vector2(19, 6), kickColor, 100);
 	}
 }
 
